@@ -7,7 +7,9 @@ class Auth extends Component {
     this.state = {
       isAuth: false,
       username: "",
-      password: ""
+      password: "",
+      // ends up as endpoint of user. Just temporary. Steve says we will be using tokens
+      currentUser: null
     };
   }
 
@@ -17,10 +19,14 @@ class Auth extends Component {
     this.setState(userState);
   }
 
-  logIn() {
-    this.setState({ isAuth: !this.state.isAuth });
+  // Doesn't actually authenticate yet
+  logIn(user) {
+    this.setState({ isAuth: !this.state.isAuth, currentUser: user }, () => {
+      console.log("current user is", this.state.currentUser);
+    });
   }
 
+  // use fetch instead?
   register(e) {
     console.log("register called");
     e.preventDefault();
@@ -31,8 +37,11 @@ class Auth extends Component {
       password
     };
     const authReq = new XMLHttpRequest();
-    authReq.addEventListener("load", function() {
-      console.log(this.responseText);
+    authReq.addEventListener("load", e => {
+      console.log(JSON.parse(e.target.responseText));
+      const url = JSON.parse(e.target.responseText).url;
+      this.setState({ username: "", password: "" });
+      this.logIn(url);
     });
     authReq.open("POST", "http://127.0.0.1:8000/users/");
     authReq.setRequestHeader("Content-type", "application/json");
