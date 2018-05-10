@@ -21,52 +21,43 @@ class Auth extends Component {
     this.setState(userState);
   }
 
-  logOut() {
-    console.log(localStorage.getItem("token"));
-    localStorage.clear();
-    console.log(localStorage.getItem("token"));
+  postAuth(route, user) {
+    fetch(`http://127.0.0.1:8000/${route}/`, {
+        method: 'POST',
+        body: JSON.stringify(user),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then((response) => {
+        console.log("auth", response)
+        return response.json();
+      })
+      .then((tokenObj) => {
+        console.log("converted token", tokenObj.token);
+        localStorage.setItem("token", tokenObj.token)
+        this.setState({
+          username: "",
+          password: ""
+        });
+      })
+      .catch((err) => {
+        console.log("auth no like you, brah", err);
+      });
   }
 
-  logIn() {
-    const user = {
-      username: this.state.username,
-      password: this.state.password
-    };
-
-    console.log(JSON.stringify(user));
-    const authReq = new XMLHttpRequest();
-    authReq.addEventListener("load", e => {
-      console.log(JSON.parse(e.target.responseText))
-      localStorage.setItem('token', JSON.parse(e.target.responseText).token);
-    });
-    authReq.open("POST", "http://127.0.0.1:8000/api-token-auth/");
-    authReq.setRequestHeader("Content-type", "application/json");
-    authReq.send(JSON.stringify(user));
-
-    // fetch({
-    //   url: 'http://127.0.0.1:8000/api-token-auth/',
-    //   method: 'POST',
-    //   data: JSON.stringify(user)
-    // })
-    //   .then( (response) => {
-    //     console.log("login", response)
-    //     return response.json();
-    //   })
-    //   .then( (myJson) => {
-    //     console.log("converted user", myJson);
-    //     this.setState({ username: "", password: "" });
-    //   })
-    //   .catch( (err) => {
-    //     console.log("login sux", err);
-    //   })
-  }
-
-  // use fetch instead?
   register(e) {
     console.log("register called");
     e.preventDefault();
     // get user data from state, not directly from form
-    const { username, first_name, last_name, email, password } = this.state;
+    const {
+      username,
+      first_name,
+      last_name,
+      email,
+      password
+    } = this.state;
+
     const user = {
       username,
       first_name,
@@ -74,13 +65,21 @@ class Auth extends Component {
       email,
       password
     };
-    const authReq = new XMLHttpRequest();
-    authReq.addEventListener("load", e => {
-      localStorage.setItem('token', JSON.parse(e.target.responseText).token);
-    });
-    authReq.open("POST", "http://127.0.0.1:8000/register/");
-    authReq.setRequestHeader("Content-type", "application/json");
-    authReq.send(JSON.stringify(user));
+    this.postAuth("register", user);
+  }
+
+  logIn() {
+    const user = {
+      username: this.state.username,
+      password: this.state.password
+    };
+    this.postAuth("api-token-auth", user);
+  }
+
+  logOut() {
+    console.log(localStorage.getItem("token"));
+    localStorage.removeItem("token");
+    console.log(localStorage.getItem("token"));
   }
 
   render() {
