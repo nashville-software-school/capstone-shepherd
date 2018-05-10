@@ -7,23 +7,58 @@ class Auth extends Component {
     this.state = {
       isAuth: false,
       username: "",
+      first_name: "",
+      last_name: "",
+      email: "",
       password: "",
-      // ends up as endpoint of user. Just temporary. Steve says we will be using tokens
-      currentUser: null
-    };
+
+    }
   }
 
   onChange(e) {
-    const userState = this.state;
+    const userState = Object.assign({}, this.state);
     userState[e.target.name] = e.target.value;
     this.setState(userState);
   }
 
-  // Doesn't actually authenticate yet
-  logIn(user) {
-    this.setState({ isAuth: !this.state.isAuth, currentUser: user }, () => {
-      console.log("current user is", this.state.currentUser);
+  logOut() {
+    console.log(localStorage.getItem("token"));
+    localStorage.clear();
+    console.log(localStorage.getItem("token"));
+  }
+
+  logIn() {
+    const user = {
+      username: this.state.username,
+      password: this.state.password
+    };
+
+    console.log(JSON.stringify(user));
+    const authReq = new XMLHttpRequest();
+    authReq.addEventListener("load", e => {
+      console.log(JSON.parse(e.target.responseText))
+      localStorage.setItem('token', JSON.parse(e.target.responseText).token);
     });
+    authReq.open("POST", "http://127.0.0.1:8000/api-token-auth/");
+    authReq.setRequestHeader("Content-type", "application/json");
+    authReq.send(JSON.stringify(user));
+
+    // fetch({
+    //   url: 'http://127.0.0.1:8000/api-token-auth/',
+    //   method: 'POST',
+    //   data: JSON.stringify(user)
+    // })
+    //   .then( (response) => {
+    //     console.log("login", response)
+    //     return response.json();
+    //   })
+    //   .then( (myJson) => {
+    //     console.log("converted user", myJson);
+    //     this.setState({ username: "", password: "" });
+    //   })
+    //   .catch( (err) => {
+    //     console.log("login sux", err);
+    //   })
   }
 
   // use fetch instead?
@@ -31,25 +66,25 @@ class Auth extends Component {
     console.log("register called");
     e.preventDefault();
     // get user data from state, not directly from form
-    const { username, password } = this.state;
+    const { username, first_name, last_name, email, password } = this.state;
     const user = {
       username,
+      first_name,
+      last_name,
+      email,
       password
     };
     const authReq = new XMLHttpRequest();
     authReq.addEventListener("load", e => {
-      console.log(JSON.parse(e.target.responseText));
-      const url = JSON.parse(e.target.responseText).url;
-      this.setState({ username: "", password: "" });
-      this.logIn(url);
+      localStorage.setItem('token', JSON.parse(e.target.responseText).token);
     });
-    authReq.open("POST", "http://127.0.0.1:8000/users/");
+    authReq.open("POST", "http://127.0.0.1:8000/register/");
     authReq.setRequestHeader("Content-type", "application/json");
     authReq.send(JSON.stringify(user));
   }
 
   render() {
-    const { username, password } = this.state;
+    const { username, first_name, last_name, email, password } = this.state;
     return (
       <div>
         <h3>This person is {!this.state.isAuth ? "not" : ""} logged in</h3>
@@ -59,6 +94,27 @@ class Auth extends Component {
           placeholder="username"
           name="username"
           value={username}
+          onChange={e => this.onChange(e)}
+        />
+        <input
+          type="text"
+          placeholder="first name"
+          name="first_name"
+          value={first_name}
+          onChange={e => this.onChange(e)}
+        />
+        <input
+          type="text"
+          placeholder="last name"
+          name="last_name"
+          value={last_name}
+          onChange={e => this.onChange(e)}
+        />
+        <input
+          type="email"
+          placeholder="email"
+          name="email"
+          value={email}
           onChange={e => this.onChange(e)}
         />
         <input
@@ -72,6 +128,7 @@ class Auth extends Component {
           Log {this.state.isAuth ? "out" : "in"}
         </button>
         <button onClick={e => this.register(e)}>Register</button>
+        <button onClick={() => this.logOut()}>Logout</button>
       </div>
     );
   }
